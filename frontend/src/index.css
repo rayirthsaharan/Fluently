@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Duolingo-inspired palette */
+  --color-duo-green: #58CC02;
+  --color-duo-green-dark: #4CAD02;
+  --color-duo-green-light: #7EE036;
+  --color-duo-green-bg: #E5F9D0;
+  --color-duo-blue: #1CB0F6;
+  --color-duo-blue-dark: #1899D6;
+  --color-duo-purple: #CE82FF;
+  --color-duo-purple-dark: #AD5CE0;
+  --color-duo-red: #FF4B4B;
+  --color-duo-red-dark: #EA2B2B;
+  --color-duo-yellow: #FFC700;
+  --color-duo-yellow-dark: #E5A800;
+  --color-duo-orange: #FF9600;
+  
+  /* UI colors */
+  --color-bg-main: #FFFFFF;
+  --color-bg-page: #F7F7F7;
+  --color-bg-card: #FFFFFF;
+  --color-border: #E5E5E5;
+  --color-border-dark: #CECECE;
+  --color-text-main: #3C3C3C;
+  --color-text-muted: #AFAFAF;
+  --color-text-dark: #1A1A1A;
+  
+  /* Level node colors */
+  --color-node-locked: #E5E5E5;
+  --color-node-locked-border: #CECECE;
+
+  --font-sans: 'Nunito', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-page);
+  color: var(--color-text-main);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Duolingo-style 3D button base */
+.btn-3d {
+  position: relative;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-3d:active {
+  transform: translateY(3px);
+  box-shadow: none !important;
+}
+
+.btn-3d-green {
+  background-color: var(--color-duo-green);
+  color: white;
+  box-shadow: 0 4px 0 var(--color-duo-green-dark);
+}
+.btn-3d-green:hover { background-color: var(--color-duo-green-light); }
+
+.btn-3d-blue {
+  background-color: var(--color-duo-blue);
+  color: white;
+  box-shadow: 0 4px 0 var(--color-duo-blue-dark);
+}
+
+.btn-3d-red {
+  background-color: var(--color-duo-red);
+  color: white;
+  box-shadow: 0 4px 0 var(--color-duo-red-dark);
+}
+
+.btn-3d-white {
+  background-color: white;
+  color: var(--color-text-main);
+  border: 2px solid var(--color-border-dark);
+  box-shadow: 0 4px 0 var(--color-border-dark);
+}
+.btn-3d-white:hover { background-color: #f0f0f0; }
+
+/* Pulsing glow animation for Aura avatar */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(88, 204, 2, 0.4); }
+  50% { box-shadow: 0 0 0 20px rgba(88, 204, 2, 0); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.aura-pulse {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.aura-ring::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 3px solid var(--color-duo-green);
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* Level node styles */
+.level-node {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.level-node:hover {
+  transform: scale(1.1);
+}
+
+.level-node-active {
+  background-color: var(--color-duo-green);
+  color: white;
+  box-shadow: 0 4px 0 var(--color-duo-green-dark), 0 0 0 4px var(--color-duo-green-bg);
+}
+
+.level-node-complete {
+  background-color: var(--color-duo-yellow);
+  color: white;
+  box-shadow: 0 4px 0 var(--color-duo-yellow-dark);
+}
+
+.level-node-locked {
+  background-color: var(--color-node-locked);
+  color: var(--color-text-muted);
+  box-shadow: 0 4px 0 var(--color-node-locked-border);
+  cursor: not-allowed;
+}
+
+/* Progress bar */
+.progress-bar-track {
+  height: 16px;
+  background-color: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--color-duo-green);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
