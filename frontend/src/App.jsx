@@ -4,7 +4,6 @@ import { GeminiProvider, useGemini } from './context/GeminiContext';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
 import LiveSession from './components/LiveSession';
-import './index.css';
 
 function AppRoutes() {
   const { userProfile, isLiveSession } = useGemini();

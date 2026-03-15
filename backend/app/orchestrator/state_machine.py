@@ -17,12 +17,12 @@ class LessonStateMachine:
       INTRO → PRACTICE (repeat 3 attempts per exercise) → NEXT → PRACTICE → ... → COMPLETE
     """
 
-    def __init__(self, total_exercises: int = 6, max_attempts: int = 3):
+    def __init__(self, total_exercises: int = 6, reps_required: int = 2):
         self.phase = LessonPhase.INTRO
         self.current_exercise_index = 0
-        self.attempts_on_current = 0
+        self.successes_on_current = 0
         self.total_exercises = total_exercises
-        self.max_attempts = max_attempts
+        self.reps_required = reps_required
         self.lesson_complete = False
 
         # Silence nudge
@@ -39,23 +39,23 @@ class LessonStateMachine:
         logger.info("State: INTRO → PRACTICE (exercise 0)")
         self.phase = LessonPhase.PRACTICE
         self.current_exercise_index = 0
-        self.attempts_on_current = 0
+        self.successes_on_current = 0
 
-    def record_attempt(self) -> dict:
+    def record_success(self) -> dict:
         """
-        Record a user attempt on the current exercise.
+        Record a successful repetition.
         Returns status dict:
-          - advance: True if should move to next exercise
+          - advance: True if should move to next exercise (reached required reps)
           - complete: True if all exercises done
-          - attempt: current attempt number
+          - reps: current successful reps
         """
-        self.attempts_on_current += 1
-        attempt = self.attempts_on_current
+        self.successes_on_current += 1
+        reps = self.successes_on_current
 
-        if self.attempts_on_current >= self.max_attempts:
-            return {"advance": True, "complete": False, "attempt": attempt}
+        if self.successes_on_current >= self.reps_required:
+            return {"advance": True, "complete": False, "reps": reps}
 
-        return {"advance": False, "complete": False, "attempt": attempt}
+        return {"advance": False, "complete": False, "reps": reps}
 
     def advance_exercise(self) -> dict:
         """
@@ -63,7 +63,7 @@ class LessonStateMachine:
         """
         self.phase = LessonPhase.NEXT
         self.current_exercise_index += 1
-        self.attempts_on_current = 0
+        self.successes_on_current = 0
 
         if self.current_exercise_index >= self.total_exercises:
             self.lesson_complete = True
@@ -78,7 +78,7 @@ class LessonStateMachine:
         return {
             "phase": self.phase.name,
             "exercise_index": self.current_exercise_index,
-            "attempts": self.attempts_on_current,
+            "successes": self.successes_on_current,
             "total_exercises": self.total_exercises,
             "lesson_complete": self.lesson_complete,
         }

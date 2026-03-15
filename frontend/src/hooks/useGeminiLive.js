@@ -126,8 +126,9 @@ export function useGeminiLive(wsUrl = 'ws://localhost:8000/ws') {
         
         // ── Turn complete: Aura finished speaking, session remains active ──
         if (msg.event === 'TURN_COMPLETE') {
-          // Don't switch to "LISTENING_USER" — session is always bidirectional
-          // Just note that Aura finished, mic is already hot
+          // Aura finished speaking — flush output buffer so we're ready for next input
+          nextPlayTimeRef.current = 0;
+          isPlayingRef.current = false;
           setSessionState('ACTIVE');
           eventHandlersRef.current.onTurnComplete?.();
         }
@@ -190,7 +191,6 @@ export function useGeminiLive(wsUrl = 'ws://localhost:8000/ws') {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          sampleRate: 16000,
           channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
@@ -200,8 +200,12 @@ export function useGeminiLive(wsUrl = 'ws://localhost:8000/ws') {
       });
       mediaStreamRef.current = stream;
       
-      // Mic context at 16kHz
-      micAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      // Use the browser's NATIVE sample rate — do NOT force 16kHz
+      // (browsers on macOS often can't run at 16kHz and silently resample incorrectly)
+      micAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const nativeSampleRate = micAudioContextRef.current.sampleRate;
+      console.log(`[AUDIO] Mic AudioContext native sample rate: ${nativeSampleRate}Hz`);
+      
       await micAudioContextRef.current.audioWorklet.addModule('/worklets/audio-processor.js');
       
       // Playback context at 24kHz (Gemini output rate)
@@ -212,12 +216,48 @@ export function useGeminiLive(wsUrl = 'ws://localhost:8000/ws') {
       const source = micAudioContextRef.current.createMediaStreamSource(stream);
       const processor = new AudioWorkletNode(micAudioContextRef.current, 'audio-processor');
       
+      // Calculate downsample ratio from native rate to 16kHz
+      const targetRate = 16000;
+      const downsampleRatio = nativeSampleRate / targetRate;
+      let chunksSent = 0;
+      
       // Mic stays HOT — continuously stream audio regardless of session state
       processor.port.onmessage = (e) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
-          const pcm16Data = floatTo16BitPCM(e.data);
+          const inputData = e.data; // Float32Array at native sample rate
+          
+          // Resample to 16kHz using linear interpolation (avoids aliasing)
+          let outputData;
+          if (Math.abs(downsampleRatio - 1.0) < 0.01) {
+            outputData = inputData;
+          } else {
+            const outputLength = Math.round(inputData.length * targetRate / nativeSampleRate);
+            outputData = new Float32Array(outputLength);
+            for (let i = 0; i < outputLength; i++) {
+              const srcIndex = i * downsampleRatio;
+              const srcFloor = Math.floor(srcIndex);
+              const srcCeil = Math.min(srcFloor + 1, inputData.length - 1);
+              const frac = srcIndex - srcFloor;
+              outputData[i] = inputData[srcFloor] * (1 - frac) + inputData[srcCeil] * frac;
+            }
+          }
+          
+          const pcm16Data = floatTo16BitPCM(outputData);
           const base64Audio = bufferToBase64(pcm16Data);
           wsRef.current.send(JSON.stringify({ type: 'audio', data: base64Audio }));
+          
+          chunksSent++;
+          if (chunksSent <= 5) {
+            // Log RMS level to verify mic is actually capturing audio
+            let sumSq = 0;
+            let maxAmp = 0;
+            for (let i = 0; i < outputData.length; i++) {
+              sumSq += outputData[i] * outputData[i];
+              maxAmp = Math.max(maxAmp, Math.abs(outputData[i]));
+            }
+            const rms = Math.sqrt(sumSq / outputData.length);
+            console.log(`[AUDIO] Chunk #${chunksSent}: ${outputData.length} samples, RMS=${rms.toFixed(4)}, maxAmp=${maxAmp.toFixed(4)}, ${pcm16Data.byteLength} bytes`);
+          }
         }
       };
       

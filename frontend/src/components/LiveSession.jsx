@@ -62,7 +62,9 @@ export default function LiveSession() {
           }
           if (state.lesson_complete) {
             setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 3000);
+            setTimeout(() => {
+              handleEnd();
+            }, 2500); // Wait for success animation to finish before quitting
           }
         }
       },
@@ -183,9 +185,9 @@ export default function LiveSession() {
                style={{ backgroundColor: '#F0F4FF', border: '2px solid #D0DFFF' }}>
             <span className="text-xs font-bold text-duo-blue uppercase tracking-wide">Now practicing</span>
             <p className="text-lg font-black text-text-dark mt-1">{currentExerciseLabel}</p>
-            {lessonState?.attempts > 0 && (
+            {lessonState?.successes > 0 && (
               <span className="text-xs font-bold text-text-muted mt-1 inline-block">
-                Attempt {lessonState.attempts}/{lessonState?.max_attempts || 3}
+                Successes: {lessonState.successes}/{lessonState?.reps_required || 2}
               </span>
             )}
           </div>

@@ -6,7 +6,7 @@
 class AudioProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.bufferSize = 512; // 32ms at 16kHz — low latency
+    this.bufferSize = 2048; // ~43ms at 48kHz native — gives VAD enough data to detect speech
     this.buffer = new Float32Array(this.bufferSize);
     this.bufferIndex = 0;
   }
